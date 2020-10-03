@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db-dev:
+    container_name: peak-it-2020-db-dev
+    image: postgres:12-alpine
+    restart: unless-stopped
+    volumes:
+      - peak-it-2020-db-dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432/tcp"
+    networks: 
+      - local_postgresql
+    environment:
+      - POSTGRES_USER=${DB_DEV_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DB_DEV_POSTGRES_PASSWORD}
+      - POSTGRES_DB=peak-it-2020-dev
+
+  db-it:
+    container_name: peak-it-2020-db-it
+    image: postgres:12-alpine
+    restart: unless-stopped
+    volumes:
+      - peak-it-2020-db-it_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432/tcp"
+    networks: 
+      - local_postgresql
+    environment:
+      - POSTGRES_USER=${DB_IT_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DB_IT_POSTGRES_PASSWORD}
+      - POSTGRES_DB=peak-it-2020-it
+
+  db-admin:
+    container_name: peak-it-2020-db-admin
+    image: dpage/pgadmin4:4.26
+    restart: unless-stopped
+    volumes:
+      - peak-it-2020-db-admin_data:/var/lib/pgadmin
+    ports:
+      - "8080:80/tcp"
+    networks:
+      - local_postgresql
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - db-dev
+      - db-it
+
+volumes:
+  peak-it-2020-db-dev_data:
+    external: true
+  peak-it-2020-db-it_data:
+    external: true
+  peak-it-2020-db-admin_data:
+    external: true
+
+networks:
+  local_postgresql:

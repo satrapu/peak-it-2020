@@ -1,0 +1,463 @@
+parameters:
+  job:
+    name: ''
+    displayName: ''
+  pool: ''
+  build:
+    configuration: 'Release'
+  # Since currently downloading an archive containing a cache of restored 
+  # NuGet packages takes considerably more time than just doing a restore 
+  # with each build, this feature has been turned off.
+  cacheRestoredNuGetPackages: False
+  sonar:
+    enabled: False
+    runAnalysisTimeoutInMinutes: 5
+    publishPollingTimeoutSeconds: 300
+    buildBreaker:
+      enabled: False
+  publishPipelineArtifacts: True
+  integrationTests:
+    databaseHost: ''
+    databaseName: ''
+    databaseUsername: ''
+    databasePassword: ''
+    databaseDockerImage: ''
+    composeProjectName: ''
+
+jobs:
+- job: ${{ parameters.job.name }}
+  displayName: ${{ parameters.job.displayName }}
+  continueOnError: False
+  pool: ${{ parameters.pool }}
+  workspace:
+    clean: all
+  variables:
+    # Environment variable used when caching restored NuGet packages.
+    # See more about this variable here: https://docs.microsoft.com/en-us/nuget/reference/cli-reference/cli-ref-environment-variables.
+    # See more about caching NuGet packages here: https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops#netnuget.
+    NUGET_PACKAGES: '$(Pipeline.Workspace)/.nuget/packages'
+
+    # Avoid caching NuGet packages each time a build runs on an Azure DevOps agent.
+    # See more here: http://donovanbrown.com/post/Stop-wasting-time-during-NET-Core-builds.
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+
+    # Disable .NET Core telemetry.
+    # See more here: https://docs.microsoft.com/en-us/dotnet/core/tools/telemetry#how-to-opt-out.
+    DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
+    # Disable Core CLR tracing.
+    # See more here: https://docs.microsoft.com/en-us/dotnet/core/dependency-loading/default-probing#how-do-i-debug-the-probing-properties-construction.
+    COREHOST_TRACE: '0'
+  steps:
+  # Customize the way this job checkouts the current Git branch.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#checkout.
+  - checkout: self
+    clean: True
+    fetchDepth: 1
+    lfs: False
+
+  # Install specific .NET Core SDK version used for building the application.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/tool/dotnet-core-tool-installer?view=azure-devops.
+  # Installing a specific .NET Core SDK version is needed to avoid installing a .NET Core global tool in a following task and 
+  # then have Azure DevOps complain that it cannot find it.
+  # This issue is documented here: https://github.com/Microsoft/azure-pipelines-tasks/issues/8291.
+  - task: UseDotNet@2
+    name: 'install_dotnetcore_sdk_required_by_application'
+    displayName: 'Install .NET Core SDK required by application'
+    inputs:
+      packageType: 'sdk'
+      version: $(DotNetCore_SDK_Version)
+      
+  # Install a specific .NET Core SDK as needed by the Azure DevOps extension used for running Sonar scans.
+  # See more about running Sonar analysis on Azure DevOps here: https://docs.sonarqube.org/latest/analysis/scan/sonarscanner-for-azure-devops/.
+  - task: UseDotNet@2
+    name: 'install_dotnetcore_sdk_required_by_sonarsource_extension'
+    displayName: 'Install .NET Core SDK required by Sonar Azure DevOps extension'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+      )
+    inputs:
+      packageType: 'sdk'
+      version: '2.1.803'
+
+  # Prepares analysis on SonarCloud.
+  - task: SonarSource.sonarcloud.14d9cde6-c1da-4d55-aa01-2965cd301255.SonarCloudPrepare@1
+    name: 'prepare_analysis_on_sonar'
+    displayName: 'Prepare analysis on SonarCloud'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+      )
+    inputs:
+      SonarCloud: 'sonar-cloud'
+      organization: 'satrapu-github'
+      projectKey: 'peakit-2020'
+      # The 'CurrentProject.Version' variable has been declared inside the 'GlobalVariables' variable group.
+      projectVersion: '$(CurrentProject.Version)'
+      extraProperties: |
+        sonar.sourceEncoding=UTF-8
+        sonar.cs.nunit.reportsPaths=**/TestResults/*.*
+        sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+        sonar.coverage.exclusions=**/Tests/**/*.cs,**/Sources/Todo.Persistence/**/TodoDbContextModelSnapshot.cs,**/Sources/Todo.WebApi/**/Startup.cs 
+
+  # Cache NuGet packages to avoid having to restore them during each build.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops#netnuget
+  # and here: https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops#conditioning-on-cache-restoration.
+  - task: Cache@2
+    name: 'cache_restored_nuget_packages'
+    displayName: Cache restored NuGet packages
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.cacheRestoredNuGetPackages }}, True)
+      )
+    inputs:
+      key: 'nuget | "$(Agent.OS)" | **/packages.lock.json,!**/bin/**'
+      restoreKeys: |
+        nuget | "$(Agent.OS)"
+      path: $(NUGET_PACKAGES)
+      cacheHitVar: CacheRestoredForNuGetPackages
+      
+  # Restore NuGet packages using 'dotnet restore' command.
+  # See more about this command here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?source=docs.
+  #
+  # The command used for generating the lock files is:
+  # dotnet restore ./Todo.sln --configfile ./nuget.config --use-lock-file --lock-file-path packages.lock.json
+  - script: >-
+      dotnet restore $(Build.SourcesDirectory)/Todo.sln 
+      --configfile $(Build.SourcesDirectory)/nuget.config
+      --locked-mode
+    name: 'restore_nuget_packages'
+    displayName: 'Restore NuGet packages'
+    condition: |
+      and
+      (
+          succeeded()
+        , ne(variables['CacheRestoredForNuGetPackages'], 'true')
+      )
+      
+  # Compile source code using 'dotnet build' command.
+  # See more about this command here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build.
+  - script: >-
+      dotnet build $(Build.SourcesDirectory)/Todo.sln
+      --configuration ${{ parameters.build.configuration }}
+    name: 'build_sources'
+    displayName: 'Build sources'
+
+  # Run unit tests and collect code coverage metrics using 'dotnet test' command.
+  # See more about this command here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test.
+  # See more about running selective tests here: https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests#nunit.
+  # Decorate the AssemblyInfo.cs found inside each unit test related project with:
+  #     [assembly: NUnit.Framework.Category("UnitTests")]
+  # 
+  # After migrating application from .NET Core 2.2 to 3.1, the --filter "Category=IntegrationTests" argument 
+  # no longer works, but this ones does work: -- NUnit.Where="cat == UnitTests".
+  # See more here: http://blog.prokrams.com/2019/12/16/nunit3-filter-dotnet/#tldr.
+  - script: >-
+      dotnet test $(Build.SourcesDirectory)/Todo.sln
+      --no-build
+      --no-restore
+      --configuration ${{ parameters.build.configuration }}
+      --test-adapter-path "."
+      --logger "nunit"
+      /p:CollectCoverage=True
+      /p:CoverletOutputFormat=opencover
+      /p:Include="[Todo.*]*"
+      /p:Exclude=\"[Todo.*.*Tests]*,[Todo.Persistence]*.TodoDbContextModelSnapshot,[Todo.WebApi]*.Startup\"
+      -- NUnit.Where="cat == UnitTests"
+    name: 'run_unit_tests'
+    displayName: 'Run unit tests'
+
+  # Publish unit test results.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/publish-test-results?view=azure-devops&tabs=yaml.
+  - task: PublishTestResults@2
+    name: 'publish_unit_test_results'
+    displayName: 'Publish unit test results'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'NUnit'
+      testResultsFiles: '**/UnitTests/**/TestResults/*'
+      mergeTestResults: True
+      buildConfiguration: ${{ parameters.build.configuration }}
+      publishRunAttachments: True
+
+  # Install and start Docker Engine on macOS based agents only.
+  # See more here: https://github.com/microsoft/azure-pipelines-image-generation/issues/738#issuecomment-527013065.
+  - script: |
+      chmod +x $(Build.SourcesDirectory)/Build/start-docker-on-macOS.sh
+      $(Build.SourcesDirectory)/Build/start-docker-on-macOS.sh
+    name: 'install_and_start_docker_on_macos'
+    displayName: 'Install and start Docker on macOS'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(variables['Agent.OS'], 'Darwin')
+      )
+
+  # Run a PowerShell script to start compose services needed when running integration tests.
+  - task: PowerShell@2
+    name: 'start_compose_services_used_by_integration_tests'
+    displayName: 'Start compose services used by integration tests'
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(Build.SourcesDirectory)/Build/RunComposeServices.ps1'
+      arguments: >-
+        -ComposeProjectName '${{ parameters.integrationTests.composeProjectName }}' `
+        -RelativePathToComposeFile './db4it-compose/docker-compose.yml' `
+        -RelativePathToEnvironmentFile './db4it-compose/.env' `
+        -ExtraEnvironmentVariables `
+         @{ `
+           'db_docker_image'='${{ parameters.integrationTests.databaseDockerImage }}'; `
+           'db_name'='${{ parameters.integrationTests.databaseName }}'; `
+           'db_username'='${{ parameters.integrationTests.databaseUsername }}'; `
+           'db_password'='${{ parameters.integrationTests.databasePassword }}'; `
+         }
+      # Docker Compose commands write to standard error stream, thus tricking Azure DevOps
+      # into thinking this PowerShell script has failed, which isn't the case.
+      # Due to this limitation (see more here: https://github.com/docker/compose/issues/5590),
+      # I need to rely on $? in my script to detect failures.
+      # Thus, set 'errorActionPreference' property to 'Continue' and set 'failOnStderr' property to False.
+      errorActionPreference: 'Continue'
+      failOnStderr: False
+      workingDirectory: $(Build.SourcesDirectory)
+
+  # Run integration tests and collect code coverage metrics using 'dotnet test' command.
+  # See more about this command here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test.
+  # Decorate the AssemblyInfo.cs found inside each integration test related project with:
+  #     [assembly: NUnit.Framework.Category("IntegrationTests")]
+  - script: >-
+      dotnet test $(Build.SourcesDirectory)/Todo.sln
+      --no-build
+      --no-restore
+      --configuration ${{ parameters.build.configuration }}
+      --test-adapter-path "."
+      --logger "nunit"
+      /p:CollectCoverage=True
+      /p:CoverletOutputFormat=opencover
+      /p:Include="[Todo.*]*"
+      /p:Exclude=\"[Todo.*.*Tests]*,[Todo.Persistence]*.TodoDbContextModelSnapshot\"
+      -- NUnit.Where="cat == IntegrationTests"
+    name: 'run_integration_tests'
+    displayName: 'Run integration tests'
+    env:
+      CONNECTIONSTRINGS__PEAKIT2020-TODOFORINTEGRATIONTESTS: >-
+        Host=${{ parameters.integrationTests.databaseHost }};
+        Port=$(compose.project.${{ parameters.integrationTests.composeProjectName }}.service.db4it.port.5432);
+        Database=${{ parameters.integrationTests.databaseName }};
+        Username=${{ parameters.integrationTests.databaseUsername }};
+        Password=${{ parameters.integrationTests.databasePassword }};
+      GENERATEJWT__SECRET: $(IntegrationTests.GenerateJwt.Secret)
+
+  # Run a PowerShell script to export the logs of the Docker Compose service
+  # used by integration tests to a specific folder.
+  - task: PowerShell@2
+    name: 'export_compose_service_logs'
+    displayName: 'Export compose service logs'
+    condition: |
+      and
+      (
+          succeededOrFailed()
+        , eq(${{ parameters.publishPipelineArtifacts }}, True)
+      )
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(Build.SourcesDirectory)/Build/PublishComposeServiceLogs.ps1'
+      arguments: >-
+        -ComposeProjectName '${{ parameters.integrationTests.composeProjectName }}' `
+        -LogsOutputFolder '$(Build.SourcesDirectory)/Tests/.ComposeService-Logs'
+      # Docker Compose commands write to standard error stream, thus tricking Azure DevOps
+      # into thinking this PowerShell script has failed, which isn't the case.
+      # Due to this limitation (see more here: https://github.com/docker/compose/issues/5590),
+      # I need to rely on $? in my script to detect failures.
+      # Thus, set 'errorActionPreference' property to 'Continue' and set 'failOnStderr' property to False.
+      errorActionPreference: 'Continue'
+      failOnStderr: False
+      workingDirectory: $(Build.SourcesDirectory)
+      
+  # Publish integration test results.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/publish-test-results?view=azure-devops&tabs=yaml.
+  - task: PublishTestResults@2
+    name: 'publish_integration_test_results'
+    displayName: 'Publish integration test results'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'NUnit'
+      testResultsFiles: '**/IntegrationTests/**/TestResults/*'
+      mergeTestResults: True
+      buildConfiguration: ${{ parameters.build.configuration }}
+      publishRunAttachments: True
+
+  # Install reportgenerator tool to be able to generate code coverage related reports using 'dotnet tool install' command.
+  # See more about this command here: https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-tool-install.
+  - script: >-
+      dotnet tool install dotnet-reportgenerator-globaltool 
+      --global
+      --version $(ReportGenerator_Version)
+    name: 'install_code_coverage_report_generator'
+    displayName: 'Install code coverage report generator tool'
+
+  # Generate code coverage report:
+  #   - combine several OpenCover coverage data files into one single file in Cobertura format
+  #   - generate coverage HTML report ready to be displayed by Azure DevOps
+  # See more here: https://github.com/danielpalme/ReportGenerator#usage.
+  # See more about the output formats here: https://github.com/danielpalme/ReportGenerator/wiki/Output-formats.
+  # In order to be able to see the report inside the Code Coverage tab on Azure DevOps, 
+  # enable Azure Boards for your project, as documented here: https://developercommunity.visualstudio.com/solutions/403137/view.html.
+  - script: >-
+      reportgenerator 
+      "-reports:$(Build.SourcesDirectory)/Tests/**/coverage.opencover.xml"
+      "-targetdir:$(Build.SourcesDirectory)/Tests/.CodeCoverageReport"
+      "-reporttypes:Cobertura"
+    name: 'generate_code_coverage_report'
+    displayName: 'Generate code coverage report'
+
+  # Publish code coverage report.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/test/publish-code-coverage-results?view=azure-devops.
+  - task: PublishCodeCoverageResults@1
+    name: 'publish_code_coverage_report'
+    displayName: 'Publish code coverage report'
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      pathToSources: '$(Build.SourcesDirectory)/Sources'
+      summaryFileLocation: '$(Build.SourcesDirectory)/Tests/.CodeCoverageReport/Cobertura.xml'
+      reportDirectory: '$(Build.SourcesDirectory)/Tests/.CodeCoverageReport'
+      
+  # Publish test related artifacts.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/artifacts/pipeline-artifacts?view=azure-devops&tabs=yaml#publish-a-pipeline-artifact.
+  #
+  # This task will make use of the ~/Tests/.artifactignore file.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/artifacts/pipeline-artifacts?view=azure-devops&tabs=yaml#using-artifactignore-files.
+  - task: PublishPipelineArtifact@1
+    name: 'publish_test_related_artifacts'
+    displayName: 'Publish test related artifacts'
+    condition: |
+      and
+      (
+          succeededOrFailed()
+        , eq(${{ parameters.publishPipelineArtifacts }}, True)
+      )
+    inputs:
+      artifact: 'test-artifacts-$(Agent.OS)-$(Agent.OSArchitecture)-$(Build.BuildNumber)-$(Build.BuildID)'
+      path: '$(Build.SourcesDirectory)/Tests'
+
+  - task: SonarSource.sonarcloud.ce096e50-6155-4de8-8800-4221aaeed4a1.SonarCloudAnalyze@1
+    name: 'run_sonar_analysis'
+    displayName: 'Run Sonar analysis'
+    inputs:
+      timeoutInMinutes: ${{ parameters.sonar.runAnalysisTimeoutInMinutes }}
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+      )
+
+  # Publish Sonar quality gate result to the remote server.
+  - task: SonarSource.sonarcloud.38b27399-a642-40af-bb7d-9971f69712e8.SonarCloudPublish@1
+    name: 'publish_sonar_quality_gate_result'
+    displayName: 'Publish Sonar quality gate result'
+    inputs:
+      pollingTimeoutSeconds: ${{ parameters.sonar.publishPollingTimeoutSeconds }}
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+        , eq(${{ parameters.sonar.buildBreaker.enabled }}, True)
+      )
+      
+  # Load the current Git branch name into a build variable to be later used when querying SonarCloud web API for the
+  # results of the static analysis performed against this branch.
+  # This build step will be run only in case the build was triggered by a pul request.
+  - task: PowerShell@2
+    name: 'load_current_git_branch_name_from_pull_request_info'
+    displayName: 'Load current Git branch name from PR info'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+        , eq(${{ parameters.sonar.buildBreaker.enabled }}, True)
+        , eq(variables['Build.Reason'], 'PullRequest')
+      )
+    inputs:
+      targetType: 'inline'
+      errorActionPreference: 'stop'
+      script: |
+        Write-Output "##vso[task.setvariable variable=CurrentGitBranchName]$(System.PullRequest.SourceBranch)"
+      
+  # Load the current Git branch name into a build variable to be later used when querying SonarCloud web API for the
+  # results of the static analysis performed against this branch.
+  # This build step will be run only in case the build was triggered by anything else but a pull request (e.g. a mere 
+  # commit, a scheduled build, etc.).
+  - task: PowerShell@2
+    name: 'load_current_git_branch_name_from_commit_info'
+    displayName: 'Load current Git branch name from commit info'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+        , eq(${{ parameters.sonar.buildBreaker.enabled }}, True)
+        , ne(variables['Build.Reason'], 'PullRequest')
+      )
+    inputs:
+      targetType: 'inline'
+      errorActionPreference: 'stop'
+      script: |
+        Write-Output "##vso[task.setvariable variable=CurrentGitBranchName]$(Build.SourceBranch)"
+      
+  # Normalize Git branch name since Azure DevOps does not provide the expected one (e.g. 'master' or 'feature/my-feature-branch').
+  # See more here: https://stackoverflow.com/questions/59956206/how-to-get-a-branch-name-with-a-slash-in-azure-devops
+  # and here: https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables.
+  - task: PowerShell@2
+    name: 'normalize_current_git_branch_name'
+    displayName: 'Normalize current Git branch name'
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+        , eq(${{ parameters.sonar.buildBreaker.enabled }}, True)
+      )
+    inputs:
+      targetType: 'inline'
+      errorActionPreference: 'stop'
+      script: |
+        $currentGitBranchName = "$(CurrentGitBranchName)"
+        $normalizedGitBranchName = $currentGitBranchName -Replace 'refs/heads/', ''
+        Write-Output "##vso[task.setvariable variable=NormalizedGitBranchName]$normalizedGitBranchName"
+        Write-Output "The current Git branch name is: $currentGitBranchName"
+        Write-Output "The normalized Git branch name is: $normalizedGitBranchName"
+
+  # Run a PowerShell script to break the build in case Sonar quality gate has failed.
+  # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/powershell?view=azure-devops.
+  - task: PowerShell@2
+    name: 'sonar_build_breaker'
+    displayName: 'Run Sonar build breaker'
+    # See more about conditions here: https://docs.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml.
+    condition: |
+      and
+      (
+          succeeded()
+        , eq(${{ parameters.sonar.enabled }}, True)
+        , eq(${{ parameters.sonar.buildBreaker.enabled }}, True)
+      )
+    inputs:
+      targetType: 'filePath'
+      filePath: '$(Build.SourcesDirectory)/Build/SonarBuildBreaker.ps1'
+      arguments: >-
+        -SonarProjectKey 'peakit-2020'
+        -SonarServerBaseUrl 'https://sonarcloud.io'
+        -SonarToken "$(CurrentProject.Sonar.Token)" 
+        -GitBranchName "$(NormalizedGitBranchName)"
+      errorActionPreference: 'stop'
+      failOnStderr: True
+      workingDirectory: $(Build.SourcesDirectory)
