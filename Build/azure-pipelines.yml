@@ -11,7 +11,7 @@ resources:
   # See more about repositories here: https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#repository-resource.
   - repository: 'satrapu'
     type: 'github'
-    name: 'satrapu/peakit-2020'
+    name: 'satrapu/peak-it-2020'
     clean: True
     # The value of the "endpoint" element must match the service connection name 
     # declared in Project Settings -> Service connections section of your Azure DevOps organization.
