@@ -49,12 +49,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Todo.WebApi.UnitTests", "Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Todo.Services.IntegrationTests", "Tests\IntegrationTests\Todo.Services.IntegrationTests\Todo.Services.IntegrationTests.csproj", "{0C017B2C-B852-45E8-BEF4-2F04E371B2CE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".sonarlint", ".sonarlint", "{9F40326A-D20A-40DE-A0D9-6D06EB4C71C5}"
-	ProjectSection(SolutionItems) = preProject
-		.sonarlint\aspnet-core-loggingCSharp.ruleset = .sonarlint\aspnet-core-loggingCSharp.ruleset
-		.sonarlint\Todo.slconfig = .sonarlint\Todo.slconfig
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Todo.Persistence.IntegrationTests", "Tests\IntegrationTests\Todo.Persistence.IntegrationTests\Todo.Persistence.IntegrationTests.csproj", "{606F50E6-9C93-4764-81E5-85D05768A546}"
 EndProject
 Global

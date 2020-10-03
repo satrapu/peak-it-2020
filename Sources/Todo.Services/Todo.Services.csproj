@@ -9,12 +9,4 @@
     <ProjectReference Include="..\Todo.Persistence\Todo.Persistence.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <CodeAnalysisRuleSet>Todo.Services.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <CodeAnalysisRuleSet>Todo.Services.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
 </Project>
