@@ -96,7 +96,7 @@ jobs:
     inputs:
       SonarCloud: 'peak-it-2020@sonarcloud.io'
       organization: 'satrapu-github'
-      projectKey: 'satrapu_peak-it-2020'
+      projectKey: 'satrapu_peak-it-2020'satrapu_peak-it-2020
       # The 'CurrentProject.Version' variable has been declared inside the 'GlobalVariables' variable group.
       projectVersion: '$(CurrentProject.Version)'
       extraProperties: |
@@ -454,7 +454,7 @@ jobs:
       targetType: 'filePath'
       filePath: '$(Build.SourcesDirectory)/Build/SonarBuildBreaker.ps1'
       arguments: >-
-        -SonarProjectKey 'peak-it-2020'
+        -SonarProjectKey 'satrapu_peak-it-2020'
         -SonarServerBaseUrl 'https://sonarcloud.io'
         -SonarToken "$(CurrentProject.Sonar.Token)" 
         -GitBranchName "$(NormalizedGitBranchName)"
