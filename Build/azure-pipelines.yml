@@ -20,7 +20,7 @@ resources:
 # Build multiple branches.
 # See more here: https://docs.microsoft.com/en-us/azure/devops/pipelines/build/ci-build-git?view=azure-devops&tabs=yaml.
 trigger:
- - master
+ - main
  - feature/*
  - bugfix/*
  - hotfix/*
