@@ -96,7 +96,7 @@ jobs:
     inputs:
       SonarCloud: 'peak-it-2020@sonarcloud.io'
       organization: 'satrapu-github'
-      projectKey: 'satrapu_peak-it-2020'satrapu_peak-it-2020
+      projectKey: 'satrapu_peak-it-2020'
       # The 'CurrentProject.Version' variable has been declared inside the 'GlobalVariables' variable group.
       projectVersion: '$(CurrentProject.Version)'
       extraProperties: |
