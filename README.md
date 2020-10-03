@@ -11,7 +11,7 @@
 This repo contains the resources to be used during the "Use Docker Compose when running integration tests with Azure Pipelines" presentation 
 at the 3rd edition of the [Peak IT](https://peakit.ro/) conference, which will take place in Brașov between October 17th and 18th 2020 (online event due to COVID-19).  
 
-This presentation is based on [this article](https://crossprogramming.com/2020/09/03/use-docker-compose-when-running-integration-tests-with-azure-pipelines.html).  
+This presentation is based on this article: [Use Docker Compose when running integration tests with Azure Pipelines](https://crossprogramming.com/2020/09/03/use-docker-compose-when-running-integration-tests-with-azure-pipelines.html).  
 
 <a name="slides">Presentation Slides</a>
 --
