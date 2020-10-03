@@ -2,7 +2,9 @@
 **Table of Contents**  
 - [Description](#description)  
 - [Presentation Slides](#slides) 
-- [References](#references)   
+- [References](#references)  
+
+[![Build Status](https://dev.azure.com/satrapu/peak-it-2020/_apis/build/status/ci-pipeline?branchName=main)](https://dev.azure.com/satrapu/peak-it-2020/_build/latest?definitionId=8&branchName=main) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=satrapu_peak-it-2020&metric=alert_status)](https://sonarcloud.io/dashboard?id=satrapu_peak-it-2020)
 
 <a name="description">Description</a>
 --
