@@ -63,7 +63,7 @@ namespace Todo.Persistence
             var testConnectionString = testConfiguration.GetConnectionString("Peak-IT-2020-TodoForIntegrationTests");
             var connectionStringBuilder = new NpgsqlConnectionStringBuilder(testConnectionString)
             {
-                Database = $"it--{MethodBase.GetCurrentMethod().DeclaringType?.Name}"
+                Database = $"it--{MethodBase.GetCurrentMethod()?.DeclaringType?.Name}"
             };
 
             DbContextOptions<TodoDbContext> dbContextOptions = new DbContextOptionsBuilder<TodoDbContext>()
