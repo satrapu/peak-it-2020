@@ -96,7 +96,7 @@ namespace Todo.WebApi.Infrastructure
             {
                 IConfiguration configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 // ReSharper disable once SettingNotFoundInConfiguration
-                var testConnectionString = configuration.GetConnectionString("PeakIT2020-TodoForIntegrationTests");
+                var testConnectionString = configuration.GetConnectionString("Peak-IT-2020-TodoForIntegrationTests");
                 var connectionStringBuilder = new NpgsqlConnectionStringBuilder(testConnectionString)
                 {
                     Database = testDatabaseName

@@ -3,7 +3,7 @@ Param(
     # Docker Compose project name.
     # See more here: https://docs.docker.com/compose/reference/overview/#use--p-to-specify-a-project-name.
     [String]
-    $ComposeProjectName = 'peakit-2020',
+    $ComposeProjectName = 'peak-it-2020',
 
     # The path to the folder where Docker Compose will write its logs.
     [String]

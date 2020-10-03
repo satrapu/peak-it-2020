@@ -94,9 +94,9 @@ jobs:
         , eq(${{ parameters.sonar.enabled }}, True)
       )
     inputs:
-      SonarCloud: 'sonar-cloud'
+      SonarCloud: 'peak-it-2020@sonarcloud.io'
       organization: 'satrapu-github'
-      projectKey: 'peakit-2020'
+      projectKey: 'peak-it-2020'
       # The 'CurrentProject.Version' variable has been declared inside the 'GlobalVariables' variable group.
       projectVersion: '$(CurrentProject.Version)'
       extraProperties: |
@@ -247,7 +247,7 @@ jobs:
     name: 'run_integration_tests'
     displayName: 'Run integration tests'
     env:
-      CONNECTIONSTRINGS__PEAKIT2020-TODOFORINTEGRATIONTESTS: >-
+      CONNECTIONSTRINGS__PEAK-IT-2020-TODOFORINTEGRATIONTESTS: >-
         Host=${{ parameters.integrationTests.databaseHost }};
         Port=$(compose.project.${{ parameters.integrationTests.composeProjectName }}.service.db4it.port.5432);
         Database=${{ parameters.integrationTests.databaseName }};
@@ -454,7 +454,7 @@ jobs:
       targetType: 'filePath'
       filePath: '$(Build.SourcesDirectory)/Build/SonarBuildBreaker.ps1'
       arguments: >-
-        -SonarProjectKey 'peakit-2020'
+        -SonarProjectKey 'peak-it-2020'
         -SonarServerBaseUrl 'https://sonarcloud.io'
         -SonarToken "$(CurrentProject.Sonar.Token)" 
         -GitBranchName "$(NormalizedGitBranchName)"

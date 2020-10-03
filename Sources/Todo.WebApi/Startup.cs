@@ -69,7 +69,7 @@ namespace Todo.WebApi
             // Configure EF Core
             services.AddDbContext<TodoDbContext>((serviceProvider, dbContextOptionsBuilder) =>
             {
-                var connectionString = Configuration.GetConnectionString("PeakIT2020-Todo");
+                var connectionString = Configuration.GetConnectionString("Peak-IT-2020-Todo");
                 dbContextOptionsBuilder.UseNpgsql(connectionString)
                     .UseLoggerFactory(serviceProvider.GetRequiredService<ILoggerFactory>());
 

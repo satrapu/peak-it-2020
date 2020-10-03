@@ -60,7 +60,7 @@ namespace Todo.Persistence
                 .AddEnvironmentVariables()
                 .Build();
             // ReSharper disable once SettingNotFoundInConfiguration
-            var testConnectionString = testConfiguration.GetConnectionString("PeakIT2020-TodoForIntegrationTests");
+            var testConnectionString = testConfiguration.GetConnectionString("Peak-IT-2020-TodoForIntegrationTests");
             var connectionStringBuilder = new NpgsqlConnectionStringBuilder(testConnectionString)
             {
                 Database = $"it--{MethodBase.GetCurrentMethod().DeclaringType?.Name}"

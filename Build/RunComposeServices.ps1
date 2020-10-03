@@ -11,7 +11,7 @@ Param(
     # Docker Compose project name.
     # See more here: https://docs.docker.com/compose/reference/overview/#use--p-to-specify-a-project-name.
     [String]
-    $ComposeProjectName = 'peakit-2020',
+    $ComposeProjectName = 'peak-it-2020',
 
     # Relative path pointing to a file containing variables following `key=value` convention.
     # This path is resolved using this script location as base path.
@@ -251,9 +251,9 @@ foreach ($ComposeService in $ComposeServices)
         # For each port mapping an Azure DevOps pipeline variable will be created with a name following 
         # the convention: compose.project.<COMPOSE_PROJECT_NAME>.service.<COMPOSE_SERVICE_NAME>.port.<CONTAINER_PORT>.
         # The variable value will be set to the host port.
-        # Using the port mapping from above and assuming the project name is 'peakit-2020' and 
+        # Using the port mapping from above and assuming the project name is 'peak-it-2020' and 
         # the service is named 'db-v12', the following variable will be created:
-        #   'compose.project.peakit-2020.services.db-v12.port.5432' with value: '32769'
+        #   'compose.project.peak-it-2020.services.db-v12.port.5432' with value: '32769'
         $VariableName = "compose.project.$ComposeProjectName.service.$($ComposeService.ServiceName).port.$ContainerPort"
         Write-Output "##vso[task.setvariable variable=$VariableName]$HostPort"
         Write-Output "##[command]Variable $VariableName has been set to: $HostPort"
