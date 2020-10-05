@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsTestProject>false</IsTestProject>
+    <CodeAnalysisRuleSet>..\..\.sonarlint\satrapu_peak-it-2020csharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="..\..\.sonarlint\satrapu_peak-it-2020\CSharp\SonarLint.xml" Link="SonarLint.xml" />
     <Content Include="log4net.config.Development.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -6,7 +6,13 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <RootNamespace>Todo.Services</RootNamespace>
+        <SonarQubeTestProject>True</SonarQubeTestProject>    
+        <CodeAnalysisRuleSet>..\..\..\.sonarlint\satrapu_peak-it-2020csharp.ruleset</CodeAnalysisRuleSet>
     </PropertyGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="..\..\..\.sonarlint\satrapu_peak-it-2020\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="coverlet.msbuild">
