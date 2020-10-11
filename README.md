@@ -24,6 +24,7 @@ TODO
 * Azure Pipelines  
   * [Home](https://azure.microsoft.com/en-us/services/devops/pipelines/)
   * [YAML reference](https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema)
+  * One can use [multi-stage pipeline](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/stages?view=azure-devops&tabs=yaml) to implement complex automation flows
   * [Announcing Azure Pipelines with unlimited CI/CD minutes for open source](https://azure.microsoft.com/en-us/blog/announcing-azure-pipelines-with-unlimited-ci-cd-minutes-for-open-source/)
 * Docker
   * [Home](https://www.docker.com/)
