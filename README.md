@@ -27,12 +27,13 @@ TODO
 * Docker
   * [Home](https://www.docker.com/)
   * [What is a Container?](https://www.docker.com/resources/what-container)
+  * [Get Started with Docker](https://www.docker.com/get-started)
 * Docker Compose 
   * [Home](https://docs.docker.com/compose/)
-  * [What is a Container?](https://www.docker.com/resources/what-container)
   * [Docker Compose healthcheck](https://docs.docker.com/compose/compose-file/#healthcheck)
   * [Compose CLI reference](https://docs.docker.com/compose/reference/)
-  * Learning about Docker & Docker Compose: [Docker Mastery](https://www.udemy.com/course/docker-mastery/) course @ Udemy
+  * [Getting Started with Docker Compose](https://docs.docker.com/compose/gettingstarted/)
+  * For learning Docker & Docker Compose I highly recommend the following course by [Bret Fisher](https://www.bretfisher.com/): [Docker Mastery](https://www.udemy.com/course/docker-mastery/) (not free, but worth every penny)
 * PostgreSQL
   * [Home](https://www.postgresql.org/)
   * Linux containers
