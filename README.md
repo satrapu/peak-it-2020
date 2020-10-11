@@ -35,6 +35,12 @@ TODO
   * [Compose CLI reference](https://docs.docker.com/compose/reference/)
   * [Getting Started with Docker Compose](https://docs.docker.com/compose/gettingstarted/)
   * For learning Docker & Docker Compose I highly recommend the following course by [Bret Fisher](https://www.bretfisher.com/): [Docker Mastery](https://www.udemy.com/course/docker-mastery/) (not free, but worth every penny)
+  * Orchetrators to use when using more than just one Docker host
+    * [Docker Swarm](https://docs.docker.com/engine/swarm/)
+    * [Kubernestes](https://kubernetes.io/)
+    * [Apache Mesos](http://mesos.apache.org/)
+    * [Nomad](https://www.nomadproject.io/)
+    * Others
 * PostgreSQL
   * [Home](https://www.postgresql.org/)
   * Linux containers
