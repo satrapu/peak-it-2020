@@ -24,6 +24,7 @@ TODO
 * Azure Pipelines  
   * [Home](https://azure.microsoft.com/en-us/services/devops/pipelines/)
   * [YAML reference](https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema)
+  * [Announcing Azure Pipelines with unlimited CI/CD minutes for open source](https://azure.microsoft.com/en-us/blog/announcing-azure-pipelines-with-unlimited-ci-cd-minutes-for-open-source/)
 * Docker
   * [Home](https://www.docker.com/)
   * [What is a Container?](https://www.docker.com/resources/what-container)
