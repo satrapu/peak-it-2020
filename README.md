@@ -4,6 +4,7 @@
 - [Presentation Slides](#slides) 
 - [References](#references)  
 - [CI Pipeline](#ci-pipeline)  
+- [Docker Commands](#docker-commands)
 
 [![Build Status](https://dev.azure.com/satrapu/peak-it-2020/_apis/build/status/ci-pipeline?branchName=main)](https://dev.azure.com/satrapu/peak-it-2020/_build/latest?definitionId=8&branchName=main) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=satrapu_peak-it-2020&metric=alert_status)](https://sonarcloud.io/dashboard?id=satrapu_peak-it-2020)
 
@@ -68,3 +69,32 @@ TODO
 <a name="ci-pipeline">CI Pipeline</a>
 --
 In order to have a clear image of the CI pipeline used to build the source code from this repo, please visit: https://github.com/satrapu/aspnet-core-logging.
+
+<a name="docker-commands">Docker Commands</a>
+--
+
+* Start compose services
+```bash
+# Start compose services founder under a specific project
+docker-compose --file="docker-compose.yml" --project-name="peak-it-2020" up --detach
+```
+
+* List running Docker containers found under a specific compose project
+```bash
+docker container ls -a --filter "label=com.docker.compose.project=peak-it-2020" --format "{{ .ID }}"
+```
+
+* Display details of a particular Docker container
+```bash
+docker container inspect --format "{{ json .Config.Labels }}" peak-it-2020-db-dev
+```
+
+* Check the health state of a particular Docker container
+```bash
+docker container inspect --format "{{.State.Health.Status}}" peak-it-2020-db-dev
+```
+
+* List all ports exposed by a particular Docker container
+```bash
+docker container port peak-it-2020-db-dev
+```
