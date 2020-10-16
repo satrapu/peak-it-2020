@@ -4,6 +4,17 @@ services:
   db-dev:
     container_name: peak-it-2020-db-dev
     image: postgres:12-alpine
+    healthcheck:
+      test: >
+        pg_isready \
+          --host=localhost \
+          --port=5432 \
+          --dbname=${DB_DEV_POSTGRES_DB_NAME} \
+          --username=${DB_DEV_POSTGRES_USER}
+      interval: "${DB_HEALTHCHECK_INTERVAL}"
+      timeout: "${DB_HEALTHCHECK_TIMEOUT}"
+      retries: ${DB_HEALTHCHECK_RETRIES}
+      start_period: "${DB_HEALTHCHECK_START_PERIOD}"
     restart: unless-stopped
     volumes:
       - peak-it-2020-db-dev_data:/var/lib/postgresql/data
@@ -14,11 +25,22 @@ services:
     environment:
       - POSTGRES_USER=${DB_DEV_POSTGRES_USER}
       - POSTGRES_PASSWORD=${DB_DEV_POSTGRES_PASSWORD}
-      - POSTGRES_DB=peak-it-2020-dev
+      - POSTGRES_DB=${DB_DEV_POSTGRES_DB_NAME}
 
   db-it:
     container_name: peak-it-2020-db-it
     image: postgres:12-alpine
+    healthcheck:
+        test: >
+          pg_isready \
+            --host=localhost \
+            --port=5432 \
+            --dbname={DB_IT_POSTGRES_DB_NAME} \
+            --username=${DB_IT_POSTGRES_USER}
+        interval: "${DB_HEALTHCHECK_INTERVAL}"
+        timeout: "${DB_HEALTHCHECK_TIMEOUT}"
+        retries: ${DB_HEALTHCHECK_RETRIES}
+        start_period: "${DB_HEALTHCHECK_START_PERIOD}"
     restart: unless-stopped
     volumes:
       - peak-it-2020-db-it_data:/var/lib/postgresql/data
@@ -29,11 +51,17 @@ services:
     environment:
       - POSTGRES_USER=${DB_IT_POSTGRES_USER}
       - POSTGRES_PASSWORD=${DB_IT_POSTGRES_PASSWORD}
-      - POSTGRES_DB=peak-it-2020-it
+      - POSTGRES_DB=${DB_IT_POSTGRES_DB_NAME}
 
   db-admin:
     container_name: peak-it-2020-db-admin
-    image: dpage/pgadmin4:4.26
+    image: dpage/pgadmin4:4.27
+    healthcheck:
+      test: wget --quiet --spider http://localhost:80/misc/ping || exit 1
+      interval: "${DB_ADMIN_HEALTHCHECK_INTERVAL}"
+      timeout: "${DB_ADMIN_HEALTHCHECK_TIMEOUT}"
+      retries: ${DB_ADMIN_HEALTHCHECK_RETRIES}
+      start_period: "${DB_ADMIN_HEALTHCHECK_START_PERIOD}"
     restart: unless-stopped
     volumes:
       - peak-it-2020-db-admin_data:/var/lib/pgadmin
