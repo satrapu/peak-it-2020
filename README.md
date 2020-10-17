@@ -17,7 +17,7 @@ This presentation is based on this article: [Use Docker Compose when running int
 
 <a name="slides">Presentation Slides</a>
 --
-TODO
+https://www.slideshare.net/satrapu/use-docker-compose-when-running-integration-tests-with-azure-pipelines
 
 <a name="references">References</a>
 --
