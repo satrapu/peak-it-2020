@@ -2,6 +2,7 @@
 **Table of Contents**  
 - [Description](#description)  
 - [Presentation Slides](#slides) 
+- [Video (Romanian)](#video) 
 - [References](#references)  
 - [CI Pipeline](#ci-pipeline)  
 - [Docker Commands](#docker-commands)
